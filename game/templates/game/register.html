@@ -6,7 +6,9 @@
         <h2 class="fs-2 my-4">Register</h2>
 
         {% if message %}
-            <div class="my-3 fs-4">{{ message }}</div>
+            <div class="container-fluid bg-danger-subtle text-danger-emphasis border-top border-bottom border-danger-subtle my-3 py-2 fs-6">
+                {{ message }}
+            </div>
         {% endif %}
 
         <form action="{% url 'register' %}" method="post">
@@ -31,7 +33,7 @@
 
         </form>
 
-        <div class="fs-4">
+        <div class="fs-5">
             Already have an account? <a href="{% url 'login' %}">Log In here.</a>
         </div>
         

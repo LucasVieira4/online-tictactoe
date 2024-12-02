@@ -3,28 +3,30 @@
 {% block body %}
 
     <div class="text-center container">
-        <h2 class="fs-2 my-4">Login</h2>
+        <h2 class="fs-2 mt-4">Login</h2>
 
         {% if message %}
-            <div class="my-3 fs-4">{{ message }}</div>
+            <div class="container-fluid bg-danger-subtle text-danger-emphasis border-top border-bottom border-danger-subtle my-3 py-2 fs-6">
+                {{ message }}
+            </div>
         {% endif %}
 
         <form action="{% url 'login' %}" method="post">
             {% csrf_token %}
 
             <div class="form-floating mb-4">
-                <input autofocus type="text" class="form-control" name="username" id="floatingInput" placeholder="Username" required>
+                <input autofocus type="text" class="form-control" name="username" id="floatingInput" placeholder="Username">
                 <label for="floatingInput">Username</label>
             </div>
             <div class="form-floating mb-4">
-                <input type="password" class="form-control" name="password" id="floatingPassword" placeholder="Password" required>
+                <input type="password" class="form-control" name="password" id="floatingPassword" placeholder="Password">
                 <label for="floatingPassword">Password</label>
             </div>
             <input class="btn btn-primary btn-lg mb-4" type="submit" value="Login">
 
         </form>
 
-        <div class="fs-4">
+        <div class="fs-5">
             Don't have an account? <a href="{% url 'register' %}">Register here.</a> 
         </div>       
     </div>

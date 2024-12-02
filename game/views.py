@@ -7,10 +7,37 @@ from django.urls import reverse
 
 from .models import User
 
+
 @login_required
 def index(request):
 
     return render(request, "game/index.html")
+
+
+def login_view(request):
+    if request.method == "POST":
+
+        # Attempt to sign user in
+        username = request.POST["username"]
+        password = request.POST["password"]
+
+        user = authenticate(request, username=username, password=password)
+
+        # Check if authentication successful
+        if user is not None:
+            login(request, user)
+            return HttpResponseRedirect(reverse("index"))
+        else:
+            return render(request, "game/login.html", {
+                "message": "Invalid username and/or password."
+            })
+    else:
+        return render(request, "game/login.html")
+    
+
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect(reverse("login"))
 
 
 def register(request):
@@ -27,7 +54,7 @@ def register(request):
         
         # Attempt to create new user
         try:
-            user = User.objects.create_user(username, password)
+            user = User.objects.create_user(username=username, password=password)
             user.save()
         except IntegrityError:
             return render(request, "game/register.html", {
@@ -38,29 +65,3 @@ def register(request):
     
     else: # GET request
         return render(request, "game/register.html")
-
-
-def login_view(request):
-    if request.method == "POST":
-        
-        # Attempt to sign user in
-        username = request.POST["username"]
-        password = request.POST["password"]
-        user = authenticate(request, username=username, password=password)
-
-        # Check if authentication was successful
-        if user is not None:
-            login(request, user)
-            return HttpResponseRedirect(reverse("index"))
-        else:
-            return render(request, "game/login.html", {
-                "message": "Invalid username and/or password."
-            })
-        
-    else: # GET request
-        return render(request, "game/login.html")
-    
-
-def logout_view(request):
-    logout(request)
-    return HttpResponseRedirect(reverse("login"))
