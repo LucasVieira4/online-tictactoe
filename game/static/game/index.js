@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(`hi`);
+    document.querySelector('#refresh_button').addEventListener('click', () => {
+        location.reload();
+    })
 })
 
 function displayGames() {

@@ -111,11 +111,9 @@ def enter_game(request, game_id):
         user.save()
 
         # Redirect to game page
-        return render(request, "game/game_table.html", {
-            "game": Game.objects.get(Q(player1=user) | Q(player2=user))
-        })
+        return HttpResponseRedirect(reverse("game", kwargs={'game_id':game_id}))
 
-
+    
 @login_required
 def create_game(request):
     user = request.user
@@ -129,9 +127,16 @@ def create_game(request):
         user.save()
 
         # Redirect to game page
-        return render(request, "game/game_table.html", {
-            "game": Game.objects.get(Q(player1=user) | Q(player2=user))
-        })
+        return HttpResponseRedirect(reverse("game", kwargs={'game_id':new_game.id}))
+   
+
+@login_required
+def game(request, game_id):
+    game = Game.objects.get(pk=game_id)
+    # Redirect to game page
+    return render(request, "game/game_table.html", {
+        "game": game
+    })
 
 
 @login_required
@@ -158,3 +163,4 @@ def end_game(request, game_id):
             "error": "Unauthorized"
         })
         
+ 
