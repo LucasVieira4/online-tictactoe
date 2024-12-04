@@ -1,0 +1,36 @@
+{% extends "game/layout.html" %}
+{% load static %}
+
+{% block title %}
+Game {{ game.id }}
+{% endblock %}
+
+{% block body %}
+
+    {% if message %}
+        <div class="container-fluid bg-danger-subtle text-center text-danger-emphasis border-top border-bottom border-danger-subtle my-3 py-2 fs-6">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    
+    {% if not game.player2 %}
+
+        <div class="container-fluid text-center pt-3">
+            <h1>Waiting for Player2 ...</h1>
+        </div>
+
+    {% else %}
+
+    <div class="container-fluid text-center pt-3">
+        <h2 class="pb-3">Player1: {{ game.player1.username }} </h2>
+        <h2 class="pb-3">Player2: {{ game.player2.username }} </h2>
+    </div>
+
+    {% endif %}
+
+    <div class="container text-center">
+        <a type="button" class="btn btn-outline-info btn-lg" href="{% url 'end_game' game_id=game.id %}">End Game</a>
+    </div>
+
+{% endblock %}

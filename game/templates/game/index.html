@@ -7,12 +7,60 @@ TicTacToe
 
 {% block body %}
 
-    <div class="container-fluid text-center">
-        <h1>Partidas</h1>
+    {% if message %}
+        <div class="container-fluid bg-danger-subtle text-center text-danger-emphasis border-top border-bottom border-danger-subtle my-3 py-2 fs-6">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <div class="container-fluid text-center pt-3">
+        <h1>Waiting Games</h1>
     </div>
-    
+
+    <div class="container text-center pt-5">
+        <div class="row row-cols-1 row-cols-md-4 g-4 justify-content-evenly" id="waiting_games_div">      
+            {% for game in waiting_games %}
+                <div class="col d-flex justify-content-center">
+                    <div class="card border-info mb-3 text-center" style="max-width: 18rem;">
+                        <div class="card-header">Game {{ game.id }}</div>
+                        <div class="card-body px-5">
+                            <h5 class="card-title pb-2">{{ game.player1 }} X {{ game.player2|default:"Empty" }}</h5>
+                            <div class="d-flex justify-content-center">
+                                <a type="button" class="btn btn-outline-info" href="{% url 'enter_game' game_id=game.id %}">Enter Match</a>
+                            </div>
+                        </div>
+                    </div> 
+                </div>
+            {% endfor %}
+        </div>        
+    </div>
+
+    <div class="container-fluid text-center pt-3">
+        <h1>Started Games</h1>
+    </div>
+
+    <div class="container text-center pt-5">
+        <div class="row row-cols-1 row-cols-md-4 g-4 justify-content-evenly" id="started_games_div">   
+            {% for game in started_games %}
+                <div class="col d-flex justify-content-center">
+                    <div class="card border-info mb-3 text-center" style="max-width: 18rem;">
+                        <div class="card-header">Game {{ game.id }}</div>
+                        <div class="card-body px-5">
+                            <h5 class="card-title pb-2">{{ game.player1 }} X {{ game.player2 }}</h5>
+                        </div>
+                    </div> 
+                </div>
+            {% endfor %}   
+        </div>        
+    </div>
+
+    <div class="container text-center pt-5">
+        <a type="button" class="btn btn-outline-info btn-lg" href="{% url 'create_game' %}">Create Room</a>
+    </div>
+
 
 {% endblock %}
 
 {% block script %}
+    <script type="module" src="{% static 'game/index.js' %}"></script>
 {% endblock %}

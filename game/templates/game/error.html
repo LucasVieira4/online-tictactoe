@@ -1,0 +1,17 @@
+{% extends "game/layout.html" %}
+{% load static %}
+
+{% block title %}
+TicTacToe
+{% endblock %}
+
+{% block body %}
+
+    {% if error %}
+        <div class="container-fluid bg-danger-subtle text-center text-danger-emphasis border-top border-bottom border-danger-subtle my-3 py-2 fs-6">
+            {{ error }}
+        </div>
+    {% endif %}
+
+
+{% endblock %}
