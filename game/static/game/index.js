@@ -1,8 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('#refresh_button').addEventListener('click', () => {
-        location.reload();
-    })
-})
+document.addEventListener('DOMContentLoaded', () => {
+    displayGames();
+    initiateSocket();
+});
 
 function displayGames() {
     fetch('/games')
@@ -22,7 +21,7 @@ function displayGames() {
                     <div class="card-body px-5">
                         <h5 class="card-title pb-2">${game.player1} X ${game.player2}</h5>
                         <div class="d-flex justify-content-center">
-                            <a type="button" class="btn btn-outline-info" id="button-${game.id}" style="display: ${game.is_enterable ? 'block' : 'none'};">Enter Match</a>
+                            <a type="button" href="enter_game/${game.id}" class="btn btn-outline-info" style="display: ${game.is_enterable ? 'block' : 'none'};">Enter Match</a>
                         </div>
                     </div>
                 </div>                  
@@ -37,4 +36,24 @@ function displayGames() {
 
         });
     })
+}
+
+function initiateSocket() {
+    const indexSocket = new WebSocket(`ws://${window.location.host}/ws/index-room/`);
+    
+    indexSocket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        console.log('Received message:', data);
+        // if data is equal to databse update, to this
+        if (data === 'database updated')
+            displayGames();
+    }
+
+    indexSocket.onclose = (e) => {
+        console.log('WebSocket connection closed');
+    };
+
+    indexSocket.onerror = (e) => {
+        console.error('WebSocket error:', e);
+    };
 }

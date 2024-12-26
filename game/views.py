@@ -6,21 +6,25 @@ from django.db.models import Q
 from django.shortcuts import render
 from django.urls import reverse
 
+
+# Necessary to send messages to the consumer
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+# Get the Redis channel layer
+channel_layer = get_channel_layer()
+
 from .models import User, Game
 
 
 @login_required
 def index(request):
     user = request.user
-    if not user.in_game:
-        return render(request, "game/index.html", {
-            "started_games": Game.objects.filter(is_enterable=False),
-            "waiting_games": Game.objects.filter(is_enterable=True),
-        })
-    else:
+    if user.in_game:
         return render(request, "game/game_table.html", {
             "game": Game.objects.get(Q(player1=user) | Q(player2=user))
         })
+    
+    return render(request, "game/index.html")
 
 
 def login_view(request):
@@ -110,6 +114,15 @@ def enter_game(request, game_id):
         game.save()
         user.save()
 
+        # Send message to all the users connect to the index room that the database was changed
+        async_to_sync(channel_layer.group_send)(
+            "index_room",
+            {
+                "type": "index_update",
+                "message": "database updated",
+            }
+        )
+
         # Redirect to game page
         return HttpResponseRedirect(reverse("game", kwargs={'game_id':game_id}))
 
@@ -125,6 +138,15 @@ def create_game(request):
         new_game = Game.objects.create(player1 = user, is_active = False, is_enterable = True)
         user.in_game = new_game
         user.save()
+
+        # Send message to all the users connect to the index room that the database was changed
+        async_to_sync(channel_layer.group_send)(
+            "index_room",
+            {
+                "type": "index_update",
+                "message": "database updated",
+            }
+        )
 
         # Redirect to game page
         return HttpResponseRedirect(reverse("game", kwargs={'game_id':new_game.id}))
@@ -155,6 +177,14 @@ def end_game(request, game_id):
             game.player2.save()
 
         game.delete()
+        # Send message to all the users connect to the index room that the database was changed
+        async_to_sync(channel_layer.group_send)(
+            "index_room",
+            {
+                "type": "index_update",
+                "message": "database updated",
+            }
+        )
 
         return HttpResponseRedirect(reverse("index"))
     
