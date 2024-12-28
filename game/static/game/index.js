@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     displayGames();
-    initiateSocket();
+    initiateIndexSocket();
 });
 
 function displayGames() {
@@ -38,22 +38,23 @@ function displayGames() {
     })
 }
 
-function initiateSocket() {
+function initiateIndexSocket() {
     const indexSocket = new WebSocket(`ws://${window.location.host}/ws/index-room/`);
     
-    indexSocket.onmessage = (e) => {
-        const data = JSON.parse(e.data);
+    indexSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
         console.log('Received message:', data);
         // if data is equal to databse update, to this
-        if (data === 'database updated')
+
+        if (data === 'database updated' || data === 'game ended')
             displayGames();
     }
 
-    indexSocket.onclose = (e) => {
+    indexSocket.onclose = (event) => {
         console.log('WebSocket connection closed');
     };
 
-    indexSocket.onerror = (e) => {
-        console.error('WebSocket error:', e);
+    indexSocket.onerror = (event) => {
+        console.error('WebSocket error:', event);
     };
 }

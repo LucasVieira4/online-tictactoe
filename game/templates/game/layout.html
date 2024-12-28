@@ -18,7 +18,7 @@
                     
                     {% if user.is_authenticated %}
                         <li class="nav-item pe-3">
-                            <a class="nav-link" href="{% url 'index' %}"><strong>{{ user.username }}</strong></a>
+                            <a class="nav-link" href="{% url 'index' %}"><strong id="user">{{ user }}</strong></a>
                         </li>
                     {% endif %}
 

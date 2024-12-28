@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, JsonResponse
@@ -119,9 +120,10 @@ def enter_game(request, game_id):
             "index_room",
             {
                 "type": "index_update",
-                "message": "database updated",
+                "message": "database updated"
             }
         )
+
 
         # Redirect to game page
         return HttpResponseRedirect(reverse("game", kwargs={'game_id':game_id}))
@@ -144,7 +146,7 @@ def create_game(request):
             "index_room",
             {
                 "type": "index_update",
-                "message": "database updated",
+                "message": "database updated"
             }
         )
 
@@ -153,18 +155,13 @@ def create_game(request):
    
 
 @login_required
-def game(request, game_id):
-    game = Game.objects.get(pk=game_id)
-    # Redirect to game page
-    return render(request, "game/game_table.html", {
-        "game": game
-    })
-
-
-@login_required
 def end_game(request, game_id):
     user = request.user
-    game = Game.objects.get(pk=game_id)
+    try:
+        game = Game.objects.get(pk=game_id)
+    except Game.DoesNotExist:
+        return HttpResponseRedirect(reverse("index"))
+    game_id = game.id
 
     # Only delete if the user is one of the players
     if user in [game.player1, game.player2]:
@@ -182,7 +179,16 @@ def end_game(request, game_id):
             "index_room",
             {
                 "type": "index_update",
-                "message": "database updated",
+                "message": "game ended"
+            }
+        )
+
+        # Send message to the game room, to alert the other player
+        async_to_sync(channel_layer.group_send)(
+            f"room_{game_id}",
+            {
+                "type": "game_update",
+                "message": "game ended"
             }
         )
 
@@ -192,5 +198,18 @@ def end_game(request, game_id):
         return render(request, "game/error", {
             "error": "Unauthorized"
         })
-        
- 
+
+
+@login_required
+def game(request, game_id):
+    
+    game = Game.objects.get(pk=game_id)
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse(game.serialize())
+
+    # Redirect to game page
+    return render(request, "game/game_table.html", {
+        "game": game
+    })
+

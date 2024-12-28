@@ -22,3 +22,5 @@ class Game(models.Model):
 
     def __str__(self):
         return f"{self.player1} X {self.player2 or 'Empty'}"
+    
+

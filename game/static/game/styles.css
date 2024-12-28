@@ -1,0 +1,28 @@
+#game-container {
+    width: min(90vw, 600px);
+    aspect-ratio: 1; 
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    border: 5px solid #0dcaf0;
+    position: relative; 
+}
+
+.game-row {
+    display: flex;
+    flex: 1;
+}
+
+.game-cell {
+    flex: 1;
+    aspect-ratio: 1; 
+    border: 5px solid #0dcaf0;
+    margin: -1px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(min(90vw, 600px) / 4); 
+    user-select: none;
+    line-height: 0; 
+    overflow: hidden; 
+}
