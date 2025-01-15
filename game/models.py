@@ -10,6 +10,8 @@ class Game(models.Model):
     player2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='games_as_player2', null=True, blank=True)
     is_active = models.BooleanField(default=False)
     is_enterable = models.BooleanField(default=True)
+    turn = models.IntegerField(default=1)
+    table = models.JSONField(default=list)
 
     def serialize(self):
         return {
@@ -17,7 +19,9 @@ class Game(models.Model):
             "player1": self.player1.username,
             "player2": self.player2.username if self.player2 else "Empty",
             "is_active": self.is_active,
-            "is_enterable": self.is_enterable
+            "is_enterable": self.is_enterable,
+            "turn": self.turn,
+            "table": self.table,
         }
 
     def __str__(self):

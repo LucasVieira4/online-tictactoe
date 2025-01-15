@@ -12,26 +12,29 @@ Game {{ game.id }}
             {{ message }}
         </div>
     {% endif %}
-    
-    <div
-        id="data"
-        data-user="{{ user }}"
-        data-player1="{{ game.player1.username }}"
-    ></div>
 
     <div class="container-fluid text-center pt-3">
         <h1 class="pb-3">Game <span id="game-id">{{ game.id }}</span></h1>
-        <h2 class="pb-3" id="waiting">Waiting for Player2 ...</h2>
+        <h2 class="pb-3" style="display: none;" id="waiting">Waiting for Player2 ...</h2>
         <h2 class="pb-3" style="display: none;" id="names"><span id="player1_name"></span> X <span id="player2_name"></span></h2>
-        <h2 class="pb-3" id="turn-display"></h2>
-        <h2 class="pb-3" id="1-won" style="display: none;">Player 1 won!</h2>
-        <h2 class="pb-3" id="2-won" style="display: none;">Player 2 won!</h2>
-        <h2 class="pb-3" id="draw" style="display: none;">Draw!</h2>
+
+    </div>
+
+    <div id="error-place" style="display: none;" class="container-fluid bg-danger-subtle text-center border-top border-bottom border-danger-subtle my-3 py-2 fs-6">
+        Can't play there! It's already clicked.
+    </div>
+
+    <div id="error-turn" style="display: none;" class="container-fluid bg-danger-subtle text-center border-top border-bottom border-danger-subtle my-3 py-2 fs-6">
+        Can't play yet, not your turn.
     </div>
 
     <div class="container text-center" id="game-grid">
     </div>
       
+    <div class="container text-center mt-3" style="display: none;" id="winner">
+        <h2 id="player1-won" class="pb-3" style="display: none;">Player 1 won</h2>
+        <h2 id="player2-won" class="pb-3" style="display: none;">Player 2 won</h2>
+    </div>
 
     <div class="container text-center mt-3" id="end_button">
         <a type="button" class="btn btn-outline-info btn-lg" href="{% url 'end_game' game_id=game.id %}">End Game</a>
@@ -43,6 +46,11 @@ Game {{ game.id }}
     </div>
     
     
+    <div
+        id="data"
+        data-user="{{ user }}"
+        data-player1="{{ game.player1.username }}"
+    ></div>    
 {% endblock %}
 
 {% block script %}

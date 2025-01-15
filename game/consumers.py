@@ -61,14 +61,19 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.accept()
 
             # Use the result of our async comparison
-            message = "player1 joined" if is_player1 else "player2 joined"
+            payload = {
+                "type": "game_update"
+            }
+
+            if is_player1:
+                payload["message"] = "player1 joined"
+            else:
+                payload["message"] = "player2 joined"
+                payload["player2_name"] = self.scope["user"].username
 
             await self.channel_layer.group_send(
                 self.room_group_name,
-                {
-                    "type": "game_update",
-                    "message": message
-                }
+                payload
             )
             
         except Exception as e:
@@ -86,7 +91,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             {
                 "type": "game_update",
-                "message": f"user {self.channel_name} disconnected"
+                "message": f"{'player1' if self.check_if_player1() else 'player2'} disconnected"
             }
         )
 
@@ -105,7 +110,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 
     async def game_update(self, event):
-        await self.send(text_data=json.dumps(event["message"]))
+        await self.send(text_data=json.dumps(event))
 
 
     def get_game(self, id):

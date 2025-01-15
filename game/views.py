@@ -17,6 +17,7 @@ channel_layer = get_channel_layer()
 from .models import User, Game
 
 
+
 @login_required
 def index(request):
     user = request.user
@@ -137,7 +138,8 @@ def create_game(request):
             "error": "You're already playing a game"
         })
     else:
-        new_game = Game.objects.create(player1 = user, is_active = False, is_enterable = True)
+        game_table = json.dumps([0, 0, 0, 0, 0, 0, 0, 0, 0]) # Create game table and set it all to 0
+        new_game = Game.objects.create(player1=user, is_active=False, is_enterable=True, table=game_table)
         user.in_game = new_game
         user.save()
 
@@ -203,13 +205,91 @@ def end_game(request, game_id):
 @login_required
 def game(request, game_id):
     
-    game = Game.objects.get(pk=game_id)
+    try:
+        game = Game.objects.get(pk=game_id)
+    except:
+        return HttpResponseRedirect(reverse("index"))
     
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse(game.serialize())
+    # Handle logic of updating the game
+    if request.method == "PUT":
+        data = json.loads(request.body)
+        game_table = json.loads(game.table) # Get and deserialize list
 
-    # Redirect to game page
-    return render(request, "game/game_table.html", {
-        "game": game
-    })
+        # Check if place chosen is a 0
+        if game_table[data['place']] != 0:
+            return JsonResponse(
+                {'error': 'Square already occupied'}, 
+                status=409
+            )
+        
+        # Update game list
+        player = data['player']
+        game_table[data['place']] = player
+        game.table = json.dumps(game_table)
+        game.turn = 3 - game.turn # Toggle between 1 and 2.
+        game.save() # Save to the db
 
+        # send websocket message
+        async_to_sync(channel_layer.group_send)(
+            f"room_{game_id}",
+            {
+                "type": "game_update",
+                "message": "database updated"
+            }
+        )
+
+        # check winner
+        if check_winner(json.loads(game.table), player):
+            async_to_sync(channel_layer.group_send)(
+                f"room_{game_id}",
+                {
+                    "type": "game_update",
+                    "message": f"player{player} won"
+                }
+            )   
+            # Return response
+            return JsonResponse(
+                {'message': 'The show has ended'}, 
+                status=200
+            )
+
+        # Return response
+        return JsonResponse(
+            {'message': 'The show must go on'}, 
+            status=200
+        )
+
+
+    else: # Request method is get
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            game.table = json.loads(game.table)
+            return JsonResponse(game.serialize())
+
+        # Redirect to game page
+        return render(request, "game/game_table.html", {
+            "game": game
+        })
+
+
+# Checks if a player has won the game
+def check_winner(board, player):
+    winning_combinations = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
+    ]
+
+    for combination in winning_combinations: # Iterate through all the lists in the combinations list
+        win = True
+        for index in combination: # Iterate through all the elements of the current list
+            if board[index] != player: # Uses the element as index to the board list, that has all the information. If not True, the player did not won in that way
+                win = False
+                break
+        if win:  # If win is still True after checking the combination
+            return True
+    return False # None of the list combinations has been found True

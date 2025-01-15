@@ -1,21 +1,34 @@
 const gameId = document.querySelector('#game-id').innerHTML;
 const user = document.querySelector('#user').innerHTML;
-let player2HasEntered = false;
-let player = '';
-let turn = 1;
-let game_array = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-let player1Username = '';
-let player2Username = '';
-let gameSocket = null;
+let player           = '';
+let turn             = '';
+let game             = '';
+let gameSocket       = null;
+let isMoveInProgress = false; // Flag to keep check of the async fetches
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    getPlayer();
-    initiateGameSocket();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        game = await getGameInformation(); 
+        // Stablish WebSocket connection
+        initiateGameSocket(); 
+        if (game.player2 == 'Empty') // P2 hasn't entered yet
+            waitingScreen(true);
+        else
+            drawGrid();
+    } catch (error) {   
+        console.log(error);
+    } 
 });
 
 async function drawGrid() {
-    // Create the main container that will hold our grid
+    // First, change the waiting <p> to the names.
+    waitingScreen(false);
+
+    // Remove the error message, if any
+    document.querySelector('#error-place').style.display = 'none';
+    document.querySelector('#error-turn').style.display = 'none';
+
     const container = document.createElement('div');
     container.id = 'game-container';
 
@@ -28,16 +41,12 @@ async function drawGrid() {
             const counter = i * 3 + j; // Index for the current cell
             const cell = document.createElement('div');
             cell.className = 'game-cell';
-            cell.id = `${counter + 1}`;
+            cell.id = `${counter}`;
 
-            // Assign X or O based on game_array
-            const value = game_array[counter];
-            if (value === 1) {
-                cell.textContent = 'X';
-                cell.style.color = '#0dcaf0';
-            } else if (value === 2) {
-                cell.textContent = 'O';
-                cell.style.color = '#0dcaf0';
+            if (game.table[counter] === 1) {
+                cell.innerHTML = `<svg fill="#0dcaf0" height="151px" width="151px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 460.775 460.775" xml:space="preserve" stroke="#0dcaf0"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="7.372400000000001"></g><g id="SVGRepo_iconCarrier"> <path d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55 c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55 c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505 c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55 l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719 c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"></path> </g></svg>`;
+            } else if (game.table[counter] === 2) {
+                cell.innerHTML = `<svg width="175px" height="175px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#0dcaf0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>`;
             }
 
             row.appendChild(cell);
@@ -53,8 +62,20 @@ async function drawGrid() {
     gameGrid.innerHTML = ''; // Clear existing grid
     gameGrid.appendChild(container);
 
-    await updatePlayerDisplay();
-    updateTurnIndicator();
+}
+
+async function waitingScreen(bool) {
+    if (bool == true) {
+        document.querySelector('#waiting').style.display = 'block';
+        document.querySelector('#names').style.display = 'none';        
+    }
+    else {
+        document.querySelector('#waiting').style.display = 'none';
+        document.querySelector('#names').style.display = 'block';
+        document.querySelector('#player1_name').innerHTML = game.player1;
+        document.querySelector('#player2_name').innerHTML = game.player2;
+    }
+        
 }
 
 
@@ -65,50 +86,35 @@ function initiateGameSocket() {
         const data = JSON.parse(event.data);
         console.log('Received message:', data);
 
-        // game messages
-        if (data.message === 'play has been made') {
-            game_array = data.gameState; 
-            turn = turn === 1 ? 2 : 1; 
-            await drawGrid();
+        if (data.message === 'database updated') {
+            game = await getGameInformation();
+            drawGrid();
         }
 
         if (data.message === 'player1 won') {
-            document.getElementById('1-won').style.display = 'block';
-            document.getElementById('game-grid').style.display = 'none';
+            document.querySelector('#winner').style.display = 'block';
+            document.querySelector('#player1-won').style.display = 'block';
+            document.querySelector('#end_button').style.display = 'block';
+            document.querySelector('#game-grid').style.display = 'none';
         }
 
         if (data.message === 'player2 won') {
-            document.getElementById('2-won').style.display = 'block';
-            document.getElementById('game-grid').style.display = 'none';
-        }
-    
-
-        if (data.message === 'draw!') {
-            document.getElementById('draw').style.display = 'block';
-            document.getElementById('game-grid').style.display = 'none';
+            document.querySelector('#winner').style.display = 'block';
+            document.querySelector('#player2-won').style.display = 'block';
+            document.querySelector('#end_button').style.display = 'block';
+            document.querySelector('#game-grid').style.display = 'none';
         }
 
-
-        if (data === 'game ended') {
+        if (data.message === 'game ended') {
             document.querySelector('#index_button').style.display = 'block';
             document.querySelector('#end_button').style.display = 'none';
             document.querySelector('#game-grid').style.display = 'none';
-            localStorage.removeItem('player2HasEntered');
-            player2HasEntered = false;
         }
     
-        if (data === 'player2 joined') {
-            player2HasEntered = true;
-            localStorage.setItem('player2HasEntered', 'true');
+        if (data.message === 'player2 joined') {
+            game.player2 = data.player2_name; // Since p1's first db fetch returns a game that has no p2, we need to set it's value here, to be updated when the screen is first loaded.
             await drawGrid();
-            updateTurnIndicator()
-        } else if (data === 'player1 joined') {
-            // Check localStorage instead of the variable
-            if (localStorage.getItem('player2HasEntered') === 'true') {
-                await drawGrid();
-                updateTurnIndicator()
-            }
-        }
+        } 
     }
 
     gameSocket.onclose = (event) => {
@@ -121,45 +127,46 @@ function initiateGameSocket() {
 }
 
 
-function makeMove(event) {
-    // Ensure the clicked cell is valid, it's the player's turn, and the cell isn't already filled
-    if (event.target.classList.contains('game-cell') && turn === player && !event.target.textContent) {
-        // Update the game array with the player's move
-        game_array[event.target.id - 1] = player;
+async function makeMove(event) {
+    // First, check the flag. If true, return right away.
+    if (isMoveInProgress) {
+        console.log("Move is already in progress. Ignoring this click.");
+        return; // Prevent overlapping moves
+    }
 
-        // Check for game result after the move
-        const result = checkGameResult();
+    if (turn === player) {
+        console.log("Starting move...");
+        isMoveInProgress = true;
 
-        // Prepare the message to send to the server
-        let message;
-        if (result === 1) {
-            message = 'player1 won';
-        } else if (result === 2) {
-            message = 'player2 won';
-        } else if (result === 'draw') {
-            message = 'draw!';
-        } else {
-            message = 'play has been made'; // No winner or draw yet
+        // Simulate fetch or delay
+        const response = await fetch(`/game/${game.id}/update`, {
+            method: 'PUT', 
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+            },
+            body: JSON.stringify({
+                player: player,
+                place: parseInt(event.target.closest('.game-cell').id)
+            })
+        })
+        if (response.status === 409) {
+            isMoveInProgress = false; 
+            document.querySelector('#error-place').style.display = 'block';
+            return;
         }
 
-        const moveData = {
-            message: message,
-            cell: event.target.id - 1,
-            player: player,
-            gameState: game_array,
-        };
+        console.log(`Move completed for square: ${event.target.id}`);
+        turn = 3 - turn;
+        isMoveInProgress = false;
 
-        // Send the move data to the server via WebSocket
-        if (gameSocket && gameSocket.readyState === WebSocket.OPEN) {
-            gameSocket.send(JSON.stringify(moveData));
-        } else {
-            console.error('WebSocket is not connected');
-        }
+    } else {
+        console.log("Not your turn!");
+        document.querySelector('#error-turn').style.display = 'block';
     }
 }
 
 
-async function getPlayer() {
+async function getGameInformation() {
     try {
         const response = await fetch(`/game/${gameId}`, {
             headers: {
@@ -168,76 +175,20 @@ async function getPlayer() {
         });
         const game = await response.json();
         
-        if (game.player1 === user) {
+        if (game.player1 === user)
             player = 1;
-        } else {
+         else
             player = 2;
-        }
-        player1Username = game.player1;
-        player2Username = game.player2;
-        
+        turn = game.turn;
         return game;
+
     } catch (error) {
         console.error('Error fetching player data:', error);
         throw error;
     }
 }
 
-
-async function updatePlayerDisplay() {
-    try {
-        
-        await getPlayer();
-        
-        document.getElementById('waiting').style.display = 'none';
-        document.getElementById('names').style.display = 'block';
-        document.getElementById('player1_name').innerHTML = player1Username;
-        document.getElementById('player2_name').innerHTML = player2Username;
-    } catch (error) {
-        console.error('Error updating player display:', error);
-    }
-}
-
-function updateTurnIndicator() {
-    const turnDisplay = document.getElementById('turn-display');
-    turnDisplay.textContent = turn === player ? 'Your turn' : "Opponent's turn";
-}
-
-function checkGameResult() {
-    // Define all possible winning combinations
-    const winningCombos = [
-        // Horizontal rows
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        // Vertical columns
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        // Diagonals
-        [0, 4, 8],
-        [2, 4, 6]
-    ];
-
-    // Check for a winner
-    for (let combo of winningCombos) {
-        // Get the value of each position in current winning combination
-        const [a, b, c] = combo;
-        const valueA = game_array[a];
-        const valueB = game_array[b];
-        const valueC = game_array[c];
-
-        // If all three positions match and aren't empty (0), we have a winner
-        if (valueA !== 0 && valueA === valueB && valueB === valueC) {
-            return valueA;
-        }
-    }
-
-    // If no winner, check for draw (all spaces filled)
-    if (!game_array.includes(0)) {
-        return 'draw';
-    }
-
-    // If no winner and not a draw, game is still ongoing
-    return false;
+function getCSRFToken() {
+    const csrfToken = document.cookie.split(';').find(cookie => cookie.trim().startsWith('csrftoken='));
+    return csrfToken ? csrfToken.split('=')[1] : '';
 }
