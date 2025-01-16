@@ -1,11 +1,11 @@
 #game-container {
-    width: min(90vw, 600px);
+    width: min(70vw, 500px);
     aspect-ratio: 1; 
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     border: 5px solid #0dcaf0;
-    position: relative; 
+    border-radius: 0.5%;
 }
 
 .game-row {

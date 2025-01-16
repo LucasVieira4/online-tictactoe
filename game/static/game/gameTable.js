@@ -1,10 +1,15 @@
 const gameId = document.querySelector('#game-id').innerHTML;
 const user = document.querySelector('#user').innerHTML;
+
+const xSVG = `<svg fill="#0dcaf0" height="151px" width="151px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 460.775 460.775" xml:space="preserve" stroke="#0dcaf0"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="7.372400000000001"></g><g id="SVGRepo_iconCarrier"> <path d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55 c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55 c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505 c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55 l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719 c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"></path> </g></svg>`;
+const oSVG = `<svg width="175px" height="175px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#0dcaf0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>`;
+
 let player           = '';
 let turn             = '';
 let game             = '';
 let gameSocket       = null;
 let isMoveInProgress = false; // Flag to keep check of the async fetches
+
 
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -25,12 +30,21 @@ async function drawGrid() {
     // First, change the waiting <p> to the names.
     waitingScreen(false);
 
-    // Remove the error message, if any
-    document.querySelector('#error-place').style.display = 'none';
-    document.querySelector('#error-turn').style.display = 'none';
-
     const container = document.createElement('div');
     container.id = 'game-container';
+    const turnIndicator = document.querySelector('#turn');
+    turnIndicator.style.background = `#212529`;
+
+    // Turn indicatior
+    if (turn == player) {
+        container.style.outline = `10px solid #0ac084`;   
+        turnIndicator.innerHTML = 'Your Turn!';
+    }
+    else {
+        container.style.outline = `10px solid #f0330d`;       
+        turnIndicator.innerHTML = `Wait. Opponent's turn.`;
+    }
+
 
     // Create the 3x3 grid structure
     for (let i = 0; i < 3; i++) {
@@ -44,9 +58,9 @@ async function drawGrid() {
             cell.id = `${counter}`;
 
             if (game.table[counter] === 1) {
-                cell.innerHTML = `<svg fill="#0dcaf0" height="151px" width="151px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 460.775 460.775" xml:space="preserve" stroke="#0dcaf0"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="7.372400000000001"></g><g id="SVGRepo_iconCarrier"> <path d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55 c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55 c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505 c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55 l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719 c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"></path> </g></svg>`;
+                cell.innerHTML = xSVG;
             } else if (game.table[counter] === 2) {
-                cell.innerHTML = `<svg width="175px" height="175px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#0dcaf0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>`;
+                cell.innerHTML = oSVG;
             }
 
             row.appendChild(cell);
@@ -55,7 +69,7 @@ async function drawGrid() {
         container.appendChild(row);
     }
 
-    container.addEventListener('click', (event) => makeMove(event));
+    container.addEventListener('click', (event) => makeMove(event, turnIndicator));
 
     // Replace the grid in the DOM
     const gameGrid = document.querySelector('#game-grid');
@@ -65,17 +79,11 @@ async function drawGrid() {
 }
 
 async function waitingScreen(bool) {
-    if (bool == true) {
-        document.querySelector('#waiting').style.display = 'block';
-        document.querySelector('#names').style.display = 'none';        
-    }
-    else {
-        document.querySelector('#waiting').style.display = 'none';
-        document.querySelector('#names').style.display = 'block';
-        document.querySelector('#player1_name').innerHTML = game.player1;
-        document.querySelector('#player2_name').innerHTML = game.player2;
-    }
-        
+    const gameInformation = document.querySelector('#game-information');
+    if (bool == true) 
+        gameInformation.innerHTML = `Waiting for Player2 ...`;    
+    else 
+        gameInformation.innerHTML = `${game.player1} X ${game.player2}`;   
 }
 
 
@@ -127,7 +135,7 @@ function initiateGameSocket() {
 }
 
 
-async function makeMove(event) {
+async function makeMove(event, turnIndicator) {
     // First, check the flag. If true, return right away.
     if (isMoveInProgress) {
         console.log("Move is already in progress. Ignoring this click.");
@@ -151,7 +159,8 @@ async function makeMove(event) {
         })
         if (response.status === 409) {
             isMoveInProgress = false; 
-            document.querySelector('#error-place').style.display = 'block';
+            turnIndicator.innerHTML = `Can't play there! It's already clicked.`; 
+            turnIndicator.style.background = `#2c0b0e`;
             return;
         }
 
@@ -161,7 +170,8 @@ async function makeMove(event) {
 
     } else {
         console.log("Not your turn!");
-        document.querySelector('#error-turn').style.display = 'block';
+        turnIndicator.innerHTML = `Can't play yet, not your turn.`; 
+        turnIndicator.style.background = `#2c0b0e`;
     }
 }
 
