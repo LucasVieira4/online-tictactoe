@@ -8,11 +8,14 @@ class User(AbstractUser):
 class Game(models.Model):
     player1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='games_as_player1', null=True, blank=True)
     player2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='games_as_player2', null=True, blank=True)
+    winner = models.IntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=False)
     is_enterable = models.BooleanField(default=True)
     turn = models.IntegerField(default=1)
     table = models.JSONField(default=list)
-
+    combination = models.JSONField(default=list)
+    draw = models.BooleanField(default=False)
+    
     def serialize(self):
         return {
             "id": self.id,
@@ -22,6 +25,9 @@ class Game(models.Model):
             "is_enterable": self.is_enterable,
             "turn": self.turn,
             "table": self.table,
+            "winner": self.winner,
+            "combination": self.combination, 
+            "draw": self.draw
         }
 
     def __str__(self):

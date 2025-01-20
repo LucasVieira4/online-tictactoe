@@ -190,7 +190,9 @@ def end_game(request, game_id):
             f"room_{game_id}",
             {
                 "type": "game_update",
-                "message": "game ended"
+                "message": "game ended abruptly",
+                "quitter": str(user)
+
             }
         )
 
@@ -239,19 +241,30 @@ def game(request, game_id):
         )
 
         # check winner
-        if check_winner(json.loads(game.table), player):
+        combination = check_winner(json.loads(game.table), player)
+        
+        if combination:
+            game.winner = player
+            game.combination = json.dumps(combination)
+            game.save()
             async_to_sync(channel_layer.group_send)(
                 f"room_{game_id}",
                 {
                     "type": "game_update",
-                    "message": f"player{player} won"
+                    "message": "a player has won",
+                    "winner": player
                 }
             )   
+            
             # Return response
             return JsonResponse(
                 {'message': 'The show has ended'}, 
                 status=200
             )
+        
+        if 0 not in game_table:
+            game.draw = True
+            game.save()
 
         # Return response
         return JsonResponse(
@@ -291,5 +304,5 @@ def check_winner(board, player):
                 win = False
                 break
         if win:  # If win is still True after checking the combination
-            return True
+            return combination
     return False # None of the list combinations has been found True

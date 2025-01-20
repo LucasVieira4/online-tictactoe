@@ -7,6 +7,8 @@ const oSVG = `<svg width="175px" height="175px" viewBox="0 0 24 24" fill="none" 
 let player           = '';
 let turn             = '';
 let game             = '';
+let combination      = '';
+let winner           = '';
 let gameSocket       = null;
 let isMoveInProgress = false; // Flag to keep check of the async fetches
 
@@ -35,16 +37,9 @@ async function drawGrid() {
     const turnIndicator = document.querySelector('#turn');
     turnIndicator.style.background = `#212529`;
 
-    // Turn indicatior
-    if (turn == player) {
-        container.style.outline = `10px solid #0ac084`;   
-        turnIndicator.innerHTML = 'Your Turn!';
-    }
-    else {
-        container.style.outline = `10px solid #f0330d`;       
-        turnIndicator.innerHTML = `Wait. Opponent's turn.`;
-    }
-
+    // Turn indicatior only if game doesn't have a winner
+    const isWinner = game.winner === player;
+    const isPlayerTurn = turn === player;
 
     // Create the 3x3 grid structure
     for (let i = 0; i < 3; i++) {
@@ -76,6 +71,26 @@ async function drawGrid() {
     gameGrid.innerHTML = ''; // Clear existing grid
     gameGrid.appendChild(container);
 
+    
+    if (game.winner) {
+        container.style.outline = isWinner ? '10px solid #0ac084' : '10px solid #f0330d';
+        turnIndicator.innerHTML = isWinner ? 'Victory!' : 'Defeat.';
+        const backgroundColor = isWinner ? '#0ac084' : '#f0330d';
+        // Parse the combination if it's a string
+        const combinationArray = JSON.parse(game.combination)
+        combinationArray.forEach(item => {
+            document.getElementById(item).style.background = backgroundColor;
+        })
+        document.querySelector('#end-button').innerHTML = `Main Page`;
+
+    } else if (game.draw) {
+        turnIndicator.innerHTML = 'Draw.';
+
+    } else {
+        container.style.outline = isPlayerTurn ? '10px solid #0ac084' : '10px solid #f0330d';
+        turnIndicator.innerHTML = isPlayerTurn ? 'Your Turn!' : "Wait. Opponent's turn.";
+    }
+
 }
 
 async function waitingScreen(bool) {
@@ -96,33 +111,28 @@ function initiateGameSocket() {
 
         if (data.message === 'database updated') {
             game = await getGameInformation();
-            drawGrid();
+            await drawGrid();
         }
-
-        if (data.message === 'player1 won') {
-            document.querySelector('#winner').style.display = 'block';
-            document.querySelector('#player1-won').style.display = 'block';
-            document.querySelector('#end_button').style.display = 'block';
-            document.querySelector('#game-grid').style.display = 'none';
-        }
-
-        if (data.message === 'player2 won') {
-            document.querySelector('#winner').style.display = 'block';
-            document.querySelector('#player2-won').style.display = 'block';
-            document.querySelector('#end_button').style.display = 'block';
-            document.querySelector('#game-grid').style.display = 'none';
-        }
-
-        if (data.message === 'game ended') {
-            document.querySelector('#index_button').style.display = 'block';
-            document.querySelector('#end_button').style.display = 'none';
-            document.querySelector('#game-grid').style.display = 'none';
-        }
-    
+        // Since p1's first db fetch returns a game that has no p2, we need to set it's value here, to be updated when the screen is first loaded.
         if (data.message === 'player2 joined') {
-            game.player2 = data.player2_name; // Since p1's first db fetch returns a game that has no p2, we need to set it's value here, to be updated when the screen is first loaded.
+            game.player2 = data.player2_name; 
             await drawGrid();
         } 
+
+        if (data.message === 'game ended abruptly') {
+            endGame(data.quitter);
+        }        
+
+        if (data.message === 'a player has won') {
+            game = await getGameInformation();
+            await drawGrid();
+        }
+
+        if (data.message === 'the game ended in a draw') {
+            game = await getGameInformation();
+            await drawGrid();
+        }
+
     }
 
     gameSocket.onclose = (event) => {
@@ -134,19 +144,22 @@ function initiateGameSocket() {
     };
 }
 
-
 async function makeMove(event, turnIndicator) {
+    
     // First, check the flag. If true, return right away.
-    if (isMoveInProgress) {
-        console.log("Move is already in progress. Ignoring this click.");
-        return; // Prevent overlapping moves
-    }
+    if (isMoveInProgress)
+        // Move is already in progress, ignoring this click to prevent overlapping moves
+        return;
+
+    if (game.winner)
+            return; // Don't send the request if the game has already ended.
+
 
     if (turn === player) {
-        console.log("Starting move...");
+        // Start of the move
         isMoveInProgress = true;
 
-        // Simulate fetch or delay
+        // This fetch is async, has a delay
         const response = await fetch(`/game/${game.id}/update`, {
             method: 'PUT', 
             headers: {
@@ -164,17 +177,16 @@ async function makeMove(event, turnIndicator) {
             return;
         }
 
-        console.log(`Move completed for square: ${event.target.id}`);
+        // Move completed
         turn = 3 - turn;
         isMoveInProgress = false;
 
     } else {
-        console.log("Not your turn!");
+        // Not user's turn. raise error
         turnIndicator.innerHTML = `Can't play yet, not your turn.`; 
         turnIndicator.style.background = `#2c0b0e`;
     }
 }
-
 
 async function getGameInformation() {
     try {
@@ -201,4 +213,10 @@ async function getGameInformation() {
 function getCSRFToken() {
     const csrfToken = document.cookie.split(';').find(cookie => cookie.trim().startsWith('csrftoken='));
     return csrfToken ? csrfToken.split('=')[1] : '';
+}
+
+function endGame(quitter) {
+    document.querySelector('#turn').innerHTML = `This game ended, ${quitter} left the match.`;
+    document.querySelector('#game-grid').innerHTML = ``;
+    document.querySelector('#end-button').innerHTML = 'Main Page';
 }

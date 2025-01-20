@@ -12,6 +12,7 @@ Game {{ game.id }}
             {{ message }}
         </div>
     {% endif %}
+
     <section>
         <div class="container-fluid text-center pt-3">
             <h1 class="pb-3">Game <span id="game-id">{{ game.id }}</span></h1>
@@ -22,23 +23,17 @@ Game {{ game.id }}
         <div class="container text-center my-4" id="game-grid">
         </div>
         
-        <div class="container text-center mt-4" id="end_button">
-            <a type="button" class="btn btn-outline-info btn-lg" href="{% url 'end_game' game_id=game.id %}">End Game</a>
+        <div class="container text-center mt-4">
+            <a type="button" id="end-button" class="btn btn-outline-info btn-lg" href="{% url 'end_game' game_id=game.id %}">End Game</a>
         </div>        
     </section>
 
-
-    <div class="container text-center mt-3" style="display: none;" id="index_button">
-        <h2 class="pb-3">Game Ended.</h2>
-        <a type="button" class="btn btn-outline-info btn-lg" href="{% url 'index' %}">Main Page</a>
-    </div>
-    
-    
     <div
         id="data"
         data-user="{{ user }}"
         data-player1="{{ game.player1.username }}"
     ></div>    
+
 {% endblock %}
 
 {% block script %}
