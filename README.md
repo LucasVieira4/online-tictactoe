@@ -171,5 +171,11 @@ The folder for the game app itself. It contains several subfolders and files ess
 - ## views.py
   Contains server-side logic for handling HTTP requests and rendering responses. This is the core of the application, as it processes requests and sends back appropriate responses.
 
+
+## How to run the application:
+First thing, we need python3 and django installed. Then, we need django channels:
+`pip install channels`
+
+
 ## I loved taking CS50w. I am Lucas and this is my project!
 Thank you!
