@@ -173,8 +173,10 @@ The folder for the game app itself. It contains several subfolders and files ess
 
 
 ## How to run the application:
-First thing, we need python3 and django installed. Then, we need django channels:
-`pip install channels`
+First thing, we need python3 and django and django channels installed:
+`pip install python3`, `pip install django`, `python3 -m pip install -U 'channels[daphne]'`.
+Then, follow this [tutorial](https://channels.readthedocs.io/en/latest/tutorial/part_2.html#enable-a-channel-layer) to enable a channel layer.
+If your choice, run `docker run --rm -p 6379:6379 redis:7`. Then, `python3 manage.py runserver` and you can go to `http://localhost:8000/`, because your app is ready to run.
 
 
 ## I loved taking CS50w. I am Lucas and this is my project!
